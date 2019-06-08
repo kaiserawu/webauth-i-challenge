@@ -45,6 +45,7 @@ server.post('/api/login', async (req, res) => {
     const dbData = await db.select().from('users').where({ username: user.username }).first();
 
     if (dbData && await bcrypt.compare(user.password, dbData.password)) {
+      req.session.username = `${user.username}`;
       res.json({ message: 'Logged in' });
     } else {
       res.status(401).json({ message: 'Invalid Credentials' });
@@ -54,21 +55,35 @@ server.post('/api/login', async (req, res) => {
   }
 })
 
-server.get('/api/users', async (req, res) => {
+server.get('/api/users', protected, async (req, res) => {
   try {
-    const loggedIn = req.headers['logged-in'];
-    
-    if (loggedIn) {
-      const dbData = await db.select().from('users');
-  
-      res.json(dbData);
-    } else {
-      res.status(401).json({ message: 'You shall not pass!' });
-    }
+    const dbData = await db.select().from('users');
+
+    res.json(dbData);
   } catch (err) {
     res.status(500).json({ error: err });
   }
 })
+
+server.get('/api/logout', (req, res) => {
+  if (req.session) {
+    req.session.destroy(err => {
+      if (err) {
+        res.send('error logging out');
+      } else {
+        res.send('good bye');
+      }
+    });
+  }
+});
+
+function protected(req, res, next) {
+  if (req.session && req.session.username) {
+    next();
+  } else {
+    res.status(401).json({ message: 'you shall not pass!' });
+  }
+}
 
 const port = 4040;
 
