@@ -4,10 +4,25 @@ const knex = require('knex');
 const knexConfig = require('./knexfile');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
+const session = require('express-session');
 
 const db = knex(knexConfig.development);
 
 const server = express();
+
+server.use(
+  session({
+    name: 'sessionCookie',
+    secret: 'ooh a spooky secret!',
+    cookie: {
+      maxAge: 1000*60*60*24*7,
+      secure: true,
+    },
+    httpOnly: true,
+    resave: false,
+    saveUninitialized: false
+  })
+)
 
 server.use(express.json());
 
